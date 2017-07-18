@@ -2,8 +2,11 @@ import UIKit
 
 open class SVGView: MacawView {
     
-    fileprivate let rootNode = Group()
-    fileprivate var svgNode: Node?
+    open var svgNode: Node? {
+        didSet {
+            render()
+        }
+    }
     
     @IBInspectable open var fileName: String? {
         didSet {
@@ -43,9 +46,8 @@ open class SVGView: MacawView {
     }
     
     fileprivate func render() {
-        guard let svgNode = self.svgNode else {
-            return
-        }
+        guard let svgNode = self.svgNode else { return }
+        
         let viewBounds = self.bounds
         if let nodeBounds = svgNode.bounds()?.cgRect() {
             let svgWidth = nodeBounds.origin.x + nodeBounds.width
@@ -82,28 +84,11 @@ open class SVGView: MacawView {
                     sy: scaleX.doubleValue
                 )
             case .scaleAspectFit:
-                let calculatedXWidth = scaleX * svgWidth
-                let calculatedXHeight = scaleX * svgHeight
-                let calculatedYWidth = scaleY * svgWidth
-                let calculatedYHeight = scaleY * svgHeight
+                let scale = min(scaleX, scaleY)
                 
-                if calculatedXWidth <= viewBounds.width && calculatedXHeight <= viewBounds.height {
-                    svgNode.place = Transform.move(
-                        dx: (viewBounds.midX - calculatedXWidth / 2).doubleValue,
-                        dy: (viewBounds.midY - calculatedXHeight / 2).doubleValue
-                        ).scale(
-                            sx: scaleX.doubleValue,
-                            sy: scaleX.doubleValue
-                    )
-                } else if calculatedYWidth <= viewBounds.width && calculatedYHeight <= viewBounds.height {
-                    svgNode.place = Transform.move(
-                        dx: (viewBounds.midX - calculatedYWidth / 2).doubleValue,
-                        dy: (viewBounds.midY - calculatedYHeight / 2).doubleValue
-                    ).scale(
-                        sx: scaleY.doubleValue,
-                        sy: scaleY.doubleValue
-                    )
-                }
+                svgNode.place = Transform.move(dx: (viewBounds.midX - svgWidth * scale / 2).doubleValue,
+                                               dy: (viewBounds.midY - svgHeight * scale / 2).doubleValue)
+                                .scale(sx: scale.doubleValue, sy: scale.doubleValue)
             case .center:
                 svgNode.place = Transform.move(
                     dx: getMidX(viewBounds, nodeBounds).doubleValue,
@@ -151,8 +136,7 @@ open class SVGView: MacawView {
             }
         }
         
-        rootNode.contents = [svgNode]
-        self.node = rootNode
+        node = svgNode
     }
     
     fileprivate func getMidX(_ viewBounds: CGRect, _ nodeBounds: CGRect) -> CGFloat {
@@ -174,5 +158,4 @@ open class SVGView: MacawView {
     fileprivate func getRight(_ viewBounds: CGRect, _ nodeBounds: CGRect) -> CGFloat {
         return viewBounds.maxX - nodeBounds.maxX + nodeBounds.origin.x
     }
-    
 }
