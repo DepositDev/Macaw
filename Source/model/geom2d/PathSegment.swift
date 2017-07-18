@@ -19,5 +19,10 @@ open class PathSegment {
             return false
         }
     }
+}
 
+extension PathSegment: CustomStringConvertible {
+    public var description: String {
+        return "\(type(of: self)): \(data)"
+    }
 }

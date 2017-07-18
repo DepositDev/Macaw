@@ -85,5 +85,10 @@ public final class Transform {
 			dx: (m21 * dy - m22 * dx) / det,
 			dy: (m12 * dx - m11 * dy) / det)
 	}
+}
 
+extension Transform: CustomStringConvertible {
+    public var description: String {
+        return "\(m11)\t\(m12)\t\(dx)\n\(m21)\t\(m22)\t\(dy)"
+    }
 }

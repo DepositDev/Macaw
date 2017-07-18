@@ -36,6 +36,14 @@ open class Group: Node {
         self.contentsVar.node = self
     }
     
+    override public var description: String {
+        
+        let description = contents.reduce("") { string, node in
+            return string + "\n    \(node)"
+        }
+        return "\(super.description)" + description
+    }
+    
     // Searching
     
     override public func nodeBy(tag: String) -> Node? {

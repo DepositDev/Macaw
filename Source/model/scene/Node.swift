@@ -1,6 +1,6 @@
 import Foundation
 
-open class Node: Drawable {
+open class Node: Drawable, CustomStringConvertible {
 
 	open let placeVar: AnimatableVariable<Transform>
 	open var place: Transform {
@@ -227,4 +227,7 @@ open class Node: Drawable {
 		return Rect()
 	}
 
+    public var description: String {
+        return "\(type(of: self)): \(bounds()?.cgRect() ?? CGRect.zero)"
+    }
 }
