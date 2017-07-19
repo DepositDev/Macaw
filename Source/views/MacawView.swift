@@ -65,6 +65,12 @@ open class MacawView: UIView, UIGestureRecognizerDelegate {
     
     internal var animationCache: AnimationCache?
     
+    public var selected: Bool = false {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
     public init?(node: Node, coder aDecoder: NSCoder) {
         
         super.init(coder: aDecoder)
@@ -141,6 +147,16 @@ open class MacawView: UIView, UIGestureRecognizerDelegate {
         
         defer {
             prevAnimatedNodes = animatedNodes
+        }
+        
+        if selected {
+            ctx?.saveGState()
+            
+            ctx?.setStrokeColor(UIColor.red.cgColor)
+            ctx?.setLineWidth(5)
+            ctx?.stroke(bounds)
+            
+            ctx?.restoreGState()
         }
         
         // No animation case
