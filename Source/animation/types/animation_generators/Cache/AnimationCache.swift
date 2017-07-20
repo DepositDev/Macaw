@@ -138,12 +138,7 @@ class AnimationCache {
 	}
 
 	func isAnimating(_ node: Node) -> Bool {
-
-		if let _ = layerCache[node] {
-			return true
-		}
-
-		return false
+		return layerCache[node] != nil
 	}
 
 	func isChildrenAnimating(_ group: Group) -> Bool {

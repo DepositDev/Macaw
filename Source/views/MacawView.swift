@@ -149,16 +149,6 @@ open class MacawView: UIView, UIGestureRecognizerDelegate {
             prevAnimatedNodes = animatedNodes
         }
         
-        if selected {
-            ctx?.saveGState()
-            
-            ctx?.setStrokeColor(UIColor.red.cgColor)
-            ctx?.setLineWidth(5)
-            ctx?.stroke(bounds)
-            
-            ctx?.restoreGState()
-        }
-        
         // No animation case
         if animatedNodes.count == 0 || animatedNodes.count > 20 {
             zLayers.forEach { $0.removeFromSuperlayer() }
@@ -167,6 +157,17 @@ open class MacawView: UIView, UIGestureRecognizerDelegate {
             
             self.context.cgContext = ctx
             renderer?.render(force: false, opacity: node.opacity)
+            
+            if selected {
+                ctx?.saveGState()
+                
+                ctx?.setStrokeColor(UIColor.red.cgColor)
+                ctx?.setLineWidth(2)
+                ctx?.stroke(bounds)
+                
+                ctx?.restoreGState()
+            }
+            
             return
         }
         
@@ -174,6 +175,7 @@ open class MacawView: UIView, UIGestureRecognizerDelegate {
         // Same nodes or some removed - no need to recalculate zPos
         if animatedNodes.count <= prevAnimatedNodes.count {
             var isEqual = true
+            
             for (i, node) in animatedNodes.enumerated() {
                 isEqual = isEqual && (node == prevAnimatedNodes[i])
             }
@@ -217,7 +219,7 @@ open class MacawView: UIView, UIGestureRecognizerDelegate {
         
         
         zLayers.forEach{
-            self.layer.addSublayer($0)
+            layer.addSublayer($0)
             $0.setNeedsDisplay()
         }
     }

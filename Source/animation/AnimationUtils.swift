@@ -85,20 +85,11 @@ class AnimationUtils {
     }
     
     class func animatedNodes(root: Node, animationCache: AnimationCache) -> [Node] {
-        if animationCache.isAnimating(root) {
-            return [root]
-        }
+        guard !animationCache.isAnimating(root) else { return [root] }
+        guard let rootGroup = root as? Group else { return [] }
         
-        guard let rootGroup = root as? Group else {
-            return []
+        return rootGroup.contents.flatMap { child in
+            return animatedNodes(root: child, animationCache: animationCache)
         }
-        
-        var result = [Node]()
-        rootGroup.contents.forEach { child in
-            let childAnimatedNodes = animatedNodes(root: child, animationCache: animationCache)
-            result.append(contentsOf: childAnimatedNodes)
-        }
-        
-        return result
     }
 }

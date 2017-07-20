@@ -9,20 +9,14 @@ class ShapeLayer: CAShapeLayer {
     var isForceRenderingEnabled = true
 
 	override func draw(in ctx: CGContext) {
-        if !shouldRenderContent {
+        guard shouldRenderContent else {
             super.draw(in: ctx)
             return
         }
-        
-		guard let node = node else {
-			return
-		}
+		guard let node = node else { return }
+		guard let animationCache = animationCache else { return }
 
-		guard let animationCache = animationCache else {
-			return
-		}
-
-		let renderContext = RenderContext(view: .none)
+		let renderContext = RenderContext(view: nil)
 		renderContext.cgContext = ctx
 
 		if let renderTransform = renderTransform {
