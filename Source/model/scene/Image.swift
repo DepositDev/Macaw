@@ -38,6 +38,12 @@ open class Image: Node {
         set(val) { hVar.value = val }
     }
     
+    internal let cropFrameVar = Variable(CGRect.zero)
+    open var cropFrame: CGRect {
+        get { return cropFrameVar.value }
+        set { cropFrameVar.value = newValue }
+    }
+    
     private var uiImage: UIImage?
     
     public init(src: String, xAlign: Align = .min, yAlign: Align = .min, aspectRatio: AspectRatio = .none, w: Int = 0, h: Int = 0, place: Transform = Transform.identity, opaque: Bool = true, opacity: Double = 1, clip: Locus? = nil, effect: Effect? = nil, visible: Bool = true, tag: [String] = []) {
@@ -129,5 +135,19 @@ open class Image: Node {
         
         // General case
         return UIImage(named: src)
+    }
+    
+    public func setImage(_ image: UIImage) {
+        var oldId: String?
+        for key in imagesMap.keys {
+            if image === imagesMap[key] {
+                oldId = key
+            }
+        }
+        
+        let id = oldId ?? UUID().uuidString
+        imagesMap[id] = image
+        
+        src = "memory://\(id)"
     }
 }

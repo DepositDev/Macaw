@@ -75,7 +75,7 @@ class ImageRenderer: NodeRenderer {
         var w = CGFloat(image.w)
         var h = CGFloat(image.h)
         if ((w == 0 || w == imageSize.width) && (h == 0 || h == imageSize.height)) {
-            return CGRect(x: 0, y: 0, width: imageSize.width, height: imageSize.height)
+            return CGRect(origin: .zero, size: imageSize)
         } else {
             if (w == 0) {
                 w = imageSize.width * h / imageSize.height
@@ -83,11 +83,14 @@ class ImageRenderer: NodeRenderer {
                 h = imageSize.height * w / imageSize.width
             }
             switch (image.aspectRatio) {
-            case AspectRatio.meet:
+            case .meet:
                 return calculateMeetAspectRatio(image, size: imageSize)
-            case AspectRatio.slice:
+            case .slice:
                 return calculateSliceAspectRatio(image, size: imageSize)
                 //ctx.cgContext!.clip(to: CGRect(x: 0, y: 0, width: w, height: h))
+            case .crop:
+                guard image.cropFrame != .zero else { return CGRect(x: 0, y: 0, width: w, height: h) }
+                return CGRect(x: -image.cropFrame.origin.x, y: image.cropFrame.origin.y, width: image.cropFrame.size.width + image.cropFrame.origin.x, height: image.cropFrame.height + image.cropFrame.origin.y)
             default:
                 return CGRect(x: 0, y: 0, width: w, height: h)
             }
