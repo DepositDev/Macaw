@@ -577,7 +577,7 @@ open class SVGParser {
         return Image(src: link, w: getIntValue(element, attribute: "width") ?? 0, h: getIntValue(element, attribute: "height") ?? 0, place: position, tag: getTag(element))
     }
     
-    fileprivate func parseText(_ text: XMLIndexer, fill: Fill?, opacity: Double, fontName: String?, fontSize: Int?,
+    fileprivate func parseText(_ text: XMLIndexer, fill: Fill?, opacity: Double, fontName: String?, fontSize: CGFloat?,
                                pos: Transform = Transform()) -> Node? {
         guard let element = text.element else {
             return .none
@@ -600,17 +600,16 @@ open class SVGParser {
         return .none
     }
     
-    fileprivate func parseSimpleText(_ text: XMLElement, fill: Fill?, opacity: Double, fontName: String?, fontSize: Int?, pos: Transform = Transform()) -> Text? {
-        guard let string = text.text else {
-            return .none
-        }
+    fileprivate func parseSimpleText(_ text: XMLElement, fill: Fill?, opacity: Double, fontName: String?, fontSize: CGFloat?, pos: Transform = Transform()) -> Text? {
+        guard let string = text.text else { return nil }
+        
         let position = pos.move(dx: getDoubleValue(text, attribute: "x") ?? 0, dy: getDoubleValue(text, attribute: "y") ?? 0)
         return Text(text: string, font: getFont(fontName: fontName, fontSize: fontSize), fill: fill ?? Color.black, place: position, opacity: opacity, tag: getTag(text))
     }
     
     // REFACTOR
     
-    fileprivate func collectTspans(_ tspan: String, collectedTspans: [Node] = [], withWhitespace: Bool = false, fill: Fill?, opacity: Double, fontName: String?, fontSize: Int?, bounds: Rect) -> [Node] {
+    fileprivate func collectTspans(_ tspan: String, collectedTspans: [Node] = [], withWhitespace: Bool = false, fill: Fill?, opacity: Double, fontName: String?, fontSize: CGFloat?, bounds: Rect) -> [Node] {
         let fullString = tspan.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) as NSString
         // exit recursion
         if fullString.isEqual(to: "") {
@@ -660,7 +659,7 @@ open class SVGParser {
     }
     
     fileprivate func parseTspan(_ tspan: XMLIndexer, withWhitespace: Bool = false, fill: Fill?, opacity: Double, fontName: String?,
-                                fontSize: Int?, bounds: Rect) -> Text? {
+                                fontSize: CGFloat?, bounds: Rect) -> Text? {
         
         guard let element = tspan.element, let string = element.text else {
             return .none
@@ -675,7 +674,7 @@ open class SVGParser {
                     place: pos, opacity: getOpacity(attributes), tag: getTag(element))
     }
     
-    fileprivate func getFont(_ attributes: [String: String] = [:], fontName: String?, fontSize: Int?) -> Font {
+    fileprivate func getFont(_ attributes: [String: String] = [:], fontName: String?, fontSize: CGFloat?) -> Font {
         return Font(
             name: getFontName(attributes) ?? fontName ?? "Serif",
             size: getFontSize(attributes) ?? fontSize ?? 12)
@@ -1196,14 +1195,11 @@ open class SVGParser {
         return attributes["font-family"]
     }
     
-    fileprivate func getFontSize(_ attributes: [String: String]) -> Int? {
-        guard let fontSize = attributes["font-size"] else {
-            return .none
-        }
-        if let size = Double(fontSize) {
-            return (Int(round(size)))
-        }
-        return .none
+    fileprivate func getFontSize(_ attributes: [String: String]) -> CGFloat? {
+        guard let fontSize = attributes["font-size"] else { return nil }
+        guard let size = Double(fontSize) else { return nil }
+        
+        return CGFloat(size)
     }
     
     fileprivate func getFontStyle(_ attributes: [String: String], style: String) -> Bool? {

@@ -73,7 +73,7 @@ class RenderUtils {
         fatalError("Unsupported node: \(node)");
     }
     
-    class func loadFont(name: String, size: Int) -> UIFont? {
+    class func loadFont(name: String, size: CGFloat) -> UIFont? {
         let separationSet = CharacterSet(charactersIn:",")
         let names = name.components(separatedBy: separationSet)
         var customFont: UIFont? = .none
@@ -85,11 +85,11 @@ class RenderUtils {
             if fontName.characters.first == " " {
                 let index = fontName.index(fontName.startIndex, offsetBy:1)
                 let fixedName = fontName.substring(from: index)
-                customFont = UIFont(name: fixedName, size: CGFloat(size))
+                customFont = UIFont(name: fixedName, size: size)
                 return
             }
             
-            customFont = UIFont(name: fontName, size: CGFloat(size))
+            customFont = UIFont(name: fontName, size: size)
         }
         
         return customFont
