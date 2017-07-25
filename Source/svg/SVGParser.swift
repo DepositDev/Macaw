@@ -332,8 +332,12 @@ open class SVGParser {
         if hexString.hasPrefix("#") {
             cleanedHexString = hexString.replacingOccurrences(of: "#", with: "")
         }
-        
+        if cleanedHexString.characters.count == 3 {
+            cleanedHexString = cleanedHexString.characters.reduce("") { $0 + "\($1)\($1)" }
+        }
+
         var rgbValue: UInt32 = 0
+        
         Scanner(string: cleanedHexString).scanHexInt32(&rgbValue)
         
         let red = CGFloat((rgbValue >> 16) & 0xff)
