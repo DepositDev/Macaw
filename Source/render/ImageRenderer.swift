@@ -90,7 +90,7 @@ class ImageRenderer: NodeRenderer {
                 //ctx.cgContext!.clip(to: CGRect(x: 0, y: 0, width: w, height: h))
             case .crop:
                 guard image.cropFrame != .zero else { return CGRect(x: 0, y: 0, width: w, height: h) }
-                return CGRect(x: -image.cropFrame.origin.x, y: image.cropFrame.origin.y, width: image.cropFrame.size.width + image.cropFrame.origin.x, height: image.cropFrame.height + image.cropFrame.origin.y)
+                return CGRect(x: -image.cropFrame.origin.x, y: image.cropFrame.origin.y, width: CGFloat(image.w), height: CGFloat(image.h))
             default:
                 return CGRect(x: 0, y: 0, width: w, height: h)
             }

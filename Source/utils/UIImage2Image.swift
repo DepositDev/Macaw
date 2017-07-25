@@ -10,7 +10,7 @@ import UIKit
 
 var imagesMap = [String: UIImage]()
 public extension UIImage {
-    public func image( xAlign: Align = .min, yAlign: Align = .min, aspectRatio: AspectRatio = .none, w: Int = 0, h: Int = 0, place: Transform = Transform.identity, opaque: Bool = true, opacity: Double = 1, clip: Locus? = nil, effect: Effect? = nil, visible: Bool = true, tag: [String] = []) -> Image {
+    public func image( xAlign: Align = .min, yAlign: Align = .min, aspectRatio: AspectRatio = .none, w: CGFloat = 0, h: CGFloat = 0, place: Transform = Transform.identity, opaque: Bool = true, opacity: Double = 1, clip: Locus? = nil, effect: Effect? = nil, visible: Bool = true, tag: [String] = []) -> Image {
         
         var oldId: String?
         for key in imagesMap.keys {

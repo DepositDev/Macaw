@@ -574,7 +574,7 @@ open class SVGParser {
             return .none
         }
         let position = pos.move(dx: getDoubleValue(element, attribute: "x") ?? 0, dy: getDoubleValue(element, attribute: "y") ?? 0)
-        return Image(src: link, w: getIntValue(element, attribute: "width") ?? 0, h: getIntValue(element, attribute: "height") ?? 0, place: position, tag: getTag(element))
+        return Image(src: link, w: getCGFloat(element, attribute: "width"), h: getCGFloat(element, attribute: "height"), place: position, tag: getTag(element))
     }
     
     fileprivate func parseText(_ text: XMLIndexer, fill: Fill?, opacity: Double, fontName: String?, fontSize: CGFloat?,
@@ -1182,6 +1182,13 @@ open class SVGParser {
             }
         }
         return .none
+    }
+    
+    fileprivate func getCGFloat(_ element: XMLElement, attribute: String) -> CGFloat{
+        guard let attributeValue = element.allAttributes[attribute]?.text else { return 0 }
+        guard let value = Double(attributeValue) else { return 0 }
+        
+        return CGFloat(value)
     }
     
     fileprivate func getIntValue(_ element: XMLElement, attribute: String) -> Int? {

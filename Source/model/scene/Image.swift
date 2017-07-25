@@ -26,14 +26,14 @@ open class Image: Node {
         set(val) { aspectRatioVar.value = val }
     }
     
-    open let wVar: Variable<Int>
-    open var w: Int {
+    open let wVar: Variable<CGFloat>
+    open var w: CGFloat {
         get { return wVar.value }
         set(val) { wVar.value = val }
     }
     
-    open let hVar: Variable<Int>
-    open var h: Int {
+    open let hVar: Variable<CGFloat>
+    open var h: CGFloat {
         get { return hVar.value }
         set(val) { hVar.value = val }
     }
@@ -46,13 +46,13 @@ open class Image: Node {
     
     private var uiImage: UIImage?
     
-    public init(src: String, xAlign: Align = .min, yAlign: Align = .min, aspectRatio: AspectRatio = .none, w: Int = 0, h: Int = 0, place: Transform = Transform.identity, opaque: Bool = true, opacity: Double = 1, clip: Locus? = nil, effect: Effect? = nil, visible: Bool = true, tag: [String] = []) {
+    public init(src: String, xAlign: Align = .min, yAlign: Align = .min, aspectRatio: AspectRatio = .none, w: CGFloat = 0, h: CGFloat = 0, place: Transform = Transform.identity, opaque: Bool = true, opacity: Double = 1, clip: Locus? = nil, effect: Effect? = nil, visible: Bool = true, tag: [String] = []) {
         self.srcVar = Variable<String>(src)
         self.xAlignVar = Variable<Align>(xAlign)
         self.yAlignVar = Variable<Align>(yAlign)
         self.aspectRatioVar = Variable<AspectRatio>(aspectRatio)
-        self.wVar = Variable<Int>(w)
-        self.hVar = Variable<Int>(h)
+        self.wVar = Variable(w)
+        self.hVar = Variable(h)
         super.init(
             place: place,
             opaque: opaque,
@@ -64,7 +64,7 @@ open class Image: Node {
         )
     }
     
-    public init(image: UIImage, xAlign: Align = .min, yAlign: Align = .min, aspectRatio: AspectRatio = .none, w: Int = 0, h: Int = 0, place: Transform = Transform.identity, opaque: Bool = true, opacity: Double = 1, clip: Locus? = nil, effect: Effect? = nil, visible: Bool = true, tag: [String] = []) {
+    public init(image: UIImage, xAlign: Align = .min, yAlign: Align = .min, aspectRatio: AspectRatio = .none, w: CGFloat = 0, h: CGFloat = 0, place: Transform = Transform.identity, opaque: Bool = true, opacity: Double = 1, clip: Locus? = nil, effect: Effect? = nil, visible: Bool = true, tag: [String] = []) {
 
         var oldId: String?
         for key in imagesMap.keys {
@@ -80,8 +80,8 @@ open class Image: Node {
         self.xAlignVar = Variable<Align>(xAlign)
         self.yAlignVar = Variable<Align>(yAlign)
         self.aspectRatioVar = Variable<AspectRatio>(aspectRatio)
-        self.wVar = Variable<Int>(w)
-        self.hVar = Variable<Int>(h)
+        self.wVar = Variable(w)
+        self.hVar = Variable(h)
         super.init(
             place: place,
             opaque: opaque,
