@@ -51,18 +51,8 @@ open class SVGParser {
     fileprivate var defFills = [String: Fill]()
     fileprivate var defMasks = [String: Shape]()
     
-    fileprivate enum PathCommandType {
-        case moveTo
-        case lineTo
-        case lineV
-        case lineH
-        case curveTo
-        case smoothCurveTo
-        case closePath
-        case none
-    }
-    
-    fileprivate typealias PathCommand = (type: PathCommandType, expression: String, absolute: Bool)
+    fileprivate let parametersSeparated = try? NSRegularExpression(pattern: "[-+]?[0-9]*\\.?[0-9]+(e[-+]?[0-9]+)?", options: [.caseInsensitive])
+    fileprivate let commandRegExp = try? NSRegularExpression(pattern: "([mlhvcsz])\\s*([ 0-9e+-.]*)", options: [.caseInsensitive])
     
     fileprivate init(_ string: String, pos: Transform = Transform()) {
         self.xmlString = string
@@ -943,227 +933,46 @@ open class SVGParser {
     fileprivate func parsePathCommands(_ d: String) -> [PathSegment] {
         var d = d.trimmingCharacters(in: .whitespaces)
         
-        var pathCommands = [PathCommand]()
-        var pathCommandName: NSString? = ""
-        var pathCommandValues: NSString? = ""
-        let scanner = Scanner(string: d)
-        let set = CharacterSet(charactersIn: SVGConstants.pathCommands.joined())
-        let charCount = d.characters.count
-        repeat {
-            scanner.scanCharacters(from: set, into: &pathCommandName)
-            scanner.scanUpToCharacters(from: set, into: &pathCommandValues)
-            pathCommands.append(
-                PathCommand(
-                    type: getCommandType(pathCommandName! as String),
-                    expression: pathCommandValues! as String,
-                    absolute: isAbsolute(pathCommandName! as String)
-                )
-            )
+        guard let results = commandRegExp?.matches(in: d, options: [], range: NSMakeRange(0, d.characters.count)) else { return [] }
+        let convertRanges: (Range<Int>) -> Range<String.Index>? = { $0.toStringIndex(string: d) }
+        
+        return results.map({ result -> [Range<Int>] in
+            var ranges = [Range<Int>]()
+            for i in 0..<result.numberOfRanges {
+                guard let range = result.rangeAt(i).toRange(), !range.isEmpty else { continue }
+                ranges.append(range)
+            }
             
-            if scanner.scanLocation == charCount {
-                break
-            }
-        } while pathCommandValues!.length > 0
-        var commands = [PathSegment]()
-        pathCommands.forEach { command in
-            if let parsedCommand = parseCommand(command) {
-                commands.append(parsedCommand)
-            }
+            return ranges
+            }).map { $0.flatMap(convertRanges) }.flatMap { command in
+                guard command.count > 1 else { return nil }
+                
+                let commandName = d.substring(with: command[1])
+                let values = command.count > 2 ? d.substring(with: command[2]) : ""
+                
+                return pathSegment(type: PathSegmentType.pathType(commandName)!, values: values)
         }
-        return commands
     }
     
-    fileprivate func parseCommand(_ command: PathCommand) -> PathSegment? {
-        var characterSet = CharacterSet()
-        characterSet.insert(" ")
-        characterSet.insert(",")
-        let commandParams = command.expression.components(separatedBy: characterSet)
-        var separatedValues = [String]()
-        commandParams.forEach { param in
-            separatedValues.append(contentsOf: separateNegativeValuesIfNeeded(param))
-        }
+    fileprivate func pathSegment(type: PathSegmentType, values: String) -> PathSegment? {
+        let characterSet = CharacterSet(charactersIn: " ,")
+        let data = values.components(separatedBy: characterSet).flatMap { separateNegativeValuesIfNeeded($0).flatMap { Double($0) } }
         
-        switch command.type {
-        case .moveTo:
-            var data = [Double]()
-            separatedValues.forEach { value in
-                if let double = Double(value) {
-                    data.append(double)
-                }
-            }
-            
-            if data.count < 2 {
-                return .none
-            }
-            
-            return PathSegment(type: command.absolute ? .M : .m, data: data)
-            
-        case .lineTo:
-            var data = [Double]()
-            separatedValues.forEach { value in
-                if let double = Double(value) {
-                    data.append(double)
-                }
-            }
-            
-            if data.count < 2 {
-                return .none
-            }
-            
-            return PathSegment(type: command.absolute ? .L : .l, data: data)
-            
-        case .lineH:
-            if separatedValues.count < 1 {
-                return .none
-            }
-            
-            guard let x = Double(separatedValues[0]) else {
-                return .none
-            }
-            
-            return PathSegment(type: command.absolute ? .H : .h, data: [x])
-            
-        case .lineV:
-            if separatedValues.count < 1 {
-                return .none
-            }
-            
-            guard let y = Double(separatedValues[0]) else {
-                return .none
-            }
-            
-            return PathSegment(type: command.absolute ? .V : .v, data: [y])
-            
-        case .curveTo:
-            var data = [Double]()
-            separatedValues.forEach { value in
-                if let double = Double(value) {
-                    data.append(double)
-                }
-            }
-            
-            if data.count < 6 {
-                return .none
-            }
-            
-            return PathSegment(type: command.absolute ? .C : .c, data: data)
-            
-        case .smoothCurveTo:
-            var data = [Double]()
-            separatedValues.forEach { value in
-                if let double = Double(value) {
-                    data.append(double)
-                }
-            }
-            
-            if data.count < 4 {
-                return .none
-            }
-            
-            return PathSegment(type: command.absolute ? .S : .s, data: data)
-            
-        case .closePath:
-            return PathSegment(type: .z)
-        default:
-            return .none
-        }
+        guard type.paramsCount <= data.count else { return nil }
+        
+        return PathSegment(type: type, data: data)
     }
     
     fileprivate func separateNegativeValuesIfNeeded(_ expression: String) -> [String] {
-        var values = [String]()
-        var value = String()
-        var e = false
-        
-        expression.unicodeScalars.forEach { scalar in
-            if scalar == "e" {
-                e = true
-            }
-            if scalar == "-" && !e {
-                if !value.isEmpty {
-                    values.append(value)
-                    value = String()
-                }
-                e = false
-            }
-            
-            value.append("\(scalar)")
-        }
-        
-        if !value.isEmpty {
-            values.append(value)
-        }
-        
-        return values
-    }
+        guard !expression.characters.isEmpty else { return [] }
+        guard let matches = parametersSeparated?.matches(in: expression, options: [], range: NSMakeRange(0, expression.characters.count)) else { return [] }
     
-    fileprivate func isAbsolute(_ commandString: String) -> Bool {
-        switch commandString {
-        case SVGConstants.moveToAbsolute:
-            return true
-        case SVGConstants.moveToRelative:
-            return false
-        case SVGConstants.lineToAbsolute:
-            return true
-        case SVGConstants.lineToRelative:
-            return false
-        case SVGConstants.lineHorizontalAbsolute:
-            return true
-        case SVGConstants.lineHorizontalRelative:
-            return false
-        case SVGConstants.lineVerticalAbsolute:
-            return true
-        case SVGConstants.lineVerticalRelative:
-            return false
-        case SVGConstants.curveToAbsolute:
-            return true
-        case SVGConstants.curveToRelative:
-            return false
-        case SVGConstants.smoothCurveToAbsolute:
-            return true
-        case SVGConstants.smoothCurveToRelative:
-            return false
-        case SVGConstants.closePathAbsolute:
-            return true
-        case SVGConstants.closePathRelative:
-            return false
-        default:
-            return true
-        }
-    }
-    
-    fileprivate func getCommandType(_ commandString: String) -> PathCommandType {
-        switch commandString {
-        case SVGConstants.moveToAbsolute:
-            return .moveTo
-        case SVGConstants.moveToRelative:
-            return .moveTo
-        case SVGConstants.lineToAbsolute:
-            return .lineTo
-        case SVGConstants.lineToRelative:
-            return .lineTo
-        case SVGConstants.lineVerticalAbsolute:
-            return .lineV
-        case SVGConstants.lineVerticalRelative:
-            return .lineV
-        case SVGConstants.lineHorizontalAbsolute:
-            return .lineH
-        case SVGConstants.lineHorizontalRelative:
-            return .lineH
-        case SVGConstants.curveToAbsolute:
-            return .curveTo
-        case SVGConstants.curveToRelative:
-            return .curveTo
-        case SVGConstants.smoothCurveToAbsolute:
-            return .smoothCurveTo
-        case SVGConstants.smoothCurveToRelative:
-            return .smoothCurveTo
-        case SVGConstants.closePathAbsolute:
-            return .closePath
-        case SVGConstants.closePathRelative:
-            return .closePath
-        default:
-            return .none
-        }
+        let convertRanges: (Range<Int>) -> Range<String.Index>? = { $0.toStringIndex(string: expression) }
+        
+        return matches.flatMap { result -> Range<Int>? in
+            guard result.numberOfRanges > 0 else { return nil }
+            return result.rangeAt(0).toRange()
+        }.flatMap(convertRanges).map { expression.substring(with: $0) }
     }
     
     fileprivate func getDoubleValue(_ element: XMLElement, attribute: String) -> Double? {
@@ -1275,4 +1084,57 @@ open class SVGParser {
         return degrees * .pi / 180
     }
     
+}
+
+
+fileprivate extension Range where Bound == Int {
+    fileprivate func toStringIndex(string: String) -> Range<String.Index>? {
+        guard self.lowerBound <= string.characters.count && self.upperBound <= string.characters.count else { return nil }
+        return Range<String.Index>(string.characters.index(string.startIndex, offsetBy: self.lowerBound)..<string.characters.index(string.startIndex, offsetBy: self.upperBound))
+    }
+}
+
+
+fileprivate extension PathSegmentType {
+    static func pathType(_ command: String) -> PathSegmentType? {
+        switch command {
+        case SVGConstants.moveToAbsolute:
+            return .M
+        case SVGConstants.moveToRelative:
+            return .m
+        case SVGConstants.lineToAbsolute:
+            return .L
+        case SVGConstants.lineToRelative:
+            return .l
+        case SVGConstants.lineVerticalAbsolute:
+            return .V
+        case SVGConstants.lineVerticalRelative:
+            return .v
+        case SVGConstants.lineHorizontalAbsolute:
+            return .H
+        case SVGConstants.lineHorizontalRelative:
+            return .h
+        case SVGConstants.curveToAbsolute:
+            return .C
+        case SVGConstants.curveToRelative:
+            return .c
+        case SVGConstants.smoothCurveToAbsolute:
+            return .S
+        case SVGConstants.smoothCurveToRelative:
+            return .s
+        case SVGConstants.closePathAbsolute, SVGConstants.closePathRelative:
+            return .z
+        default: return nil
+        }
+    }
+    
+    var paramsCount: Int {
+        switch self {
+        case .M, .m, .L, .l: return 2
+        case .H, .h, .V, .v: return 1
+        case .C, .c:         return 6
+        case .S, .s:         return 4
+        default: return 0
+        }
+    }
 }
